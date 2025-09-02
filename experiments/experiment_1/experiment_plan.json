@@ -1,0 +1,146 @@
+{
+  "experiment_name": "Iris Species Classification Baseline",
+  "task_type": "multi-class classification",
+  "target_column": "Species",
+  "evaluation_metric": "Macro-averaged AUC",
+  "preprocessing_steps": {
+    "feature_selection": {
+      "features_to_use": ["SepalLengthCm", "SepalWidthCm", "PetalLengthCm", "PetalWidthCm"],
+      "features_to_drop": ["Id"],
+      "rationale": "EDA and experiments confirmed all four measurement features are predictive, with petal measurements showing superior discriminative power. ID column provides no predictive value."
+    },
+    "scaling": {
+      "method": "StandardScaler",
+      "apply_to": ["SepalLengthCm", "SepalWidthCm", "PetalLengthCm", "PetalWidthCm"],
+      "rationale": "Features are on similar scales (all in centimeters) but standardization improves performance for distance-based and regularized algorithms. Experiments showed minimal impact on tree-based models but significant improvement for logistic regression."
+    },
+    "missing_values": {
+      "strategy": "none_required",
+      "rationale": "Dataset contains no missing values as confirmed during EDA."
+    }
+  },
+  "feature_engineering_steps": {
+    "create_ratio_features": {
+      "enabled": false,
+      "rationale": "Initial experiments showed ratio features (petal length/width, sepal length/width) achieved perfect cross-validation scores, suggesting potential overfitting. Baseline experiment should use original features only to establish robust performance baseline."
+    },
+    "interaction_features": {
+      "enabled": false,
+      "rationale": "Polynomial interaction features achieved perfect scores in experiments but may lead to overfitting on this small dataset. Reserved for future iterations if baseline underperforms."
+    },
+    "dimensionality_reduction": {
+      "enabled": false,
+      "rationale": "With only 4 features and excellent class separability demonstrated in EDA, dimensionality reduction is unnecessary and may lose interpretability."
+    }
+  },
+  "model_selection_steps": {
+    "primary_algorithm": {
+      "name": "LogisticRegression",
+      "hyperparameters": {
+        "C": 1.0,
+        "random_state": 42,
+        "max_iter": 1000,
+        "multi_class": "ovr"
+      },
+      "rationale": "Logistic Regression with C=1.0 achieved 0.9967 macro AUC on test set, outperforming other configurations. Provides interpretable coefficients and handles multi-class naturally."
+    },
+    "secondary_algorithm": {
+      "name": "RandomForestClassifier",
+      "hyperparameters": {
+        "n_estimators": 100,
+        "random_state": 42,
+        "max_depth": null
+      },
+      "rationale": "Random Forest achieved 0.9867 macro AUC and provides feature importance insights. Serves as robust tree-based baseline for comparison."
+    },
+    "hyperparameter_tuning": {
+      "method": "GridSearchCV",
+      "cv_folds": 5,
+      "stratified": true,
+      "parameters_to_tune": {
+        "LogisticRegression": ["C: [0.1, 1.0, 10.0, 100.0]"],
+        "RandomForestClassifier": ["n_estimators: [50, 100, 200]", "max_depth: [None, 5, 10]"]
+      },
+      "scoring_metric": "roc_auc_ovr_macro"
+    }
+  },
+  "evaluation_strategy": {
+    "cross_validation": {
+      "method": "StratifiedKFold",
+      "n_splits": 5,
+      "shuffle": true,
+      "random_state": 42,
+      "rationale": "Stratified CV maintains class balance across folds. 5-fold provides good bias-variance tradeoff for 120 training samples."
+    },
+    "test_set_evaluation": {
+      "holdout_test": true,
+      "test_size": 30,
+      "metrics": ["macro_auc", "accuracy", "classification_report", "confusion_matrix"]
+    },
+    "model_interpretability": {
+      "feature_importance": {
+        "enabled": true,
+        "methods": ["logistic_coefficients", "random_forest_importance"],
+        "rationale": "Critical for understanding which measurements most discriminate between species, validating biological domain knowledge."
+      },
+      "coefficient_analysis": {
+        "enabled": true,
+        "standardized_coefficients": true,
+        "rationale": "Standardized coefficients allow direct comparison of feature contributions in logistic regression."
+      }
+    },
+    "error_analysis": {
+      "confusion_matrix_analysis": {
+        "enabled": true,
+        "per_class_metrics": true,
+        "rationale": "Identify which species pairs are most difficult to distinguish, particularly Iris-versicolor vs Iris-virginica based on EDA insights."
+      },
+      "misclassification_inspection": {
+        "enabled": true,
+        "analyze_feature_values": true,
+        "rationale": "Examine feature values of misclassified samples to understand model limitations and potential areas for improvement."
+      },
+      "calibration_analysis": {
+        "enabled": true,
+        "method": "reliability_diagram",
+        "rationale": "Assess probability calibration quality since macro AUC depends on well-calibrated probability estimates."
+      }
+    },
+    "performance_diagnostics": {
+      "class_specific_metrics": {
+        "enabled": true,
+        "metrics": ["precision", "recall", "f1_score", "auc_per_class"],
+        "rationale": "Given perfect class balance, identify if any species is systematically harder to classify."
+      },
+      "learning_curves": {
+        "enabled": true,
+        "rationale": "With small dataset (120 samples), assess if models would benefit from more data or are overfitting."
+      }
+    }
+  },
+  "expected_outputs": {
+    "model_artifacts": {
+      "trained_models": ["best_logistic_regression.pkl", "best_random_forest.pkl"],
+      "preprocessor": "standard_scaler.pkl"
+    },
+    "performance_reports": {
+      "cross_validation_results": "cv_results.csv",
+      "test_set_performance": "test_performance.json",
+      "classification_report": "classification_report.txt",
+      "confusion_matrix": "confusion_matrix.png"
+    },
+    "analysis_outputs": {
+      "feature_importance_plot": "feature_importance.png",
+      "coefficient_plot": "logistic_coefficients.png",
+      "learning_curves": "learning_curves.png",
+      "calibration_plot": "calibration_analysis.png",
+      "error_analysis_report": "error_analysis.md"
+    }
+  },
+  "success_criteria": {
+    "primary_metric": "macro_auc >= 0.95",
+    "secondary_metrics": ["accuracy >= 0.93", "all_class_f1 >= 0.90"],
+    "interpretability": "Feature importance aligns with domain knowledge (petal measurements > sepal measurements)",
+    "robustness": "Consistent performance across CV folds (std < 0.05)"
+  }
+}

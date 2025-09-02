@@ -1,5 +1,7 @@
 from typing import Optional
 import pandas as pd
+import pickle
+import os
 
 from sklearn.base import BaseEstimator, TransformerMixin
 
@@ -12,7 +14,7 @@ class DataProcessor(BaseEstimator, TransformerMixin):
 
     def fit(self, X: pd.DataFrame, y: Optional[pd.Series] = None) -> 'DataProcessor':
         """
-        Fit the feature processor to the data.
+        Fit the data processor to the data.
 
         Parameters:
         X (pd.DataFrame): The input features.
@@ -21,7 +23,11 @@ class DataProcessor(BaseEstimator, TransformerMixin):
         Returns:
         DataProcessor: The fitted processor.
         """
-        # Implement fitting logic if necessary
+        # Validate that required columns exist
+        missing_cols = [col for col in self.config.feature_columns if col not in X.columns]
+        if missing_cols:
+            raise ValueError(f"Missing required columns: {missing_cols}")
+        
         return self
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
@@ -34,10 +40,20 @@ class DataProcessor(BaseEstimator, TransformerMixin):
         Returns:
         pd.DataFrame: The transformed features.
         """
-        # Implement transformation logic based on the config
-        # For example, you might want to select specific columns or apply transformations
-        # Here we just return the input DataFrame as a placeholder
-        return X
+        # Make a copy to avoid modifying original data
+        X_transformed = X.copy()
+        
+        # Drop columns specified in config
+        if self.config.drop_columns:
+            cols_to_drop = [col for col in self.config.drop_columns if col in X_transformed.columns]
+            X_transformed = X_transformed.drop(columns=cols_to_drop)
+        
+        # Select only feature columns if specified
+        if self.config.feature_columns:
+            available_feature_cols = [col for col in self.config.feature_columns if col in X_transformed.columns]
+            X_transformed = X_transformed[available_feature_cols]
+        
+        return X_transformed
 
     def fit_transform(self, X: pd.DataFrame, y: Optional[pd.Series] = None, **fit_params) -> pd.DataFrame:
         """
@@ -54,21 +70,25 @@ class DataProcessor(BaseEstimator, TransformerMixin):
 
     def save(self, path: str) -> None:
         """
-        Save the feature processor as an artifact
+        Save the data processor as an artifact
 
         Parameters:
-        path (str): The file path to save the configuration.
+        path (str): The file path to save the processor.
         """
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'wb') as f:
+            pickle.dump(self, f)
 
-    def load(self, path: str) -> 'DataProcessor':
+    @classmethod
+    def load(cls, path: str) -> 'DataProcessor':
         """
-        Load the feature processor from a saved artifact.
+        Load the data processor from a saved artifact.
 
         Parameters:
-        path (str): The file path to load the configuration from.
+        path (str): The file path to load the processor from.
 
         Returns:
-        FeatureProcessor: The loaded feature processor.
+        DataProcessor: The loaded data processor.
         """
-        # Implement loading logic if necessary
-        return self
+        with open(path, 'rb') as f:
+            return pickle.load(f)

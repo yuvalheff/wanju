@@ -1,0 +1,88 @@
+{
+  "experiment_name": "Iris Species Classification Baseline",
+  "experiment_id": "experiment_1",
+  "timestamp": "2025-09-02T13:00:15.045780Z",
+  "seed": 42,
+  "primary_metric": {
+    "name": "Macro-averaged AUC",
+    "value": 0.997,
+    "target": 0.95,
+    "achieved": true
+  },
+  "model_configuration": {
+    "algorithm": "LogisticRegression",
+    "hyperparameters": {
+      "C": 1.0,
+      "random_state": 42,
+      "max_iter": 1000,
+      "multi_class": "ovr"
+    },
+    "preprocessing": {
+      "scaler": "StandardScaler",
+      "features_used": ["SepalLengthCm", "SepalWidthCm", "PetalLengthCm", "PetalWidthCm"],
+      "features_dropped": ["Id"]
+    }
+  },
+  "performance_metrics": {
+    "test_accuracy": 0.9333,
+    "test_macro_auc": 0.9967,
+    "test_macro_precision": 0.9333,
+    "test_macro_recall": 0.9333,
+    "test_macro_f1": 0.9333,
+    "cv_mean": 0.9984,
+    "cv_std": 0.0031
+  },
+  "per_class_performance": {
+    "Iris-setosa": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 10
+    },
+    "Iris-versicolor": {
+      "precision": 0.9,
+      "recall": 0.9,
+      "f1_score": 0.9,
+      "support": 10
+    },
+    "Iris-virginica": {
+      "precision": 0.9,
+      "recall": 0.9,
+      "f1_score": 0.9,
+      "support": 10
+    }
+  },
+  "confusion_matrix": [
+    [10, 0, 0],
+    [0, 9, 1], 
+    [0, 1, 9]
+  ],
+  "key_findings": [
+    "Perfect classification of linearly separable Iris-setosa species",
+    "Symmetric confusion between Iris-versicolor and Iris-virginica (1 error each)",
+    "Excellent cross-validation stability (std < 0.5%)",
+    "Model achieves target performance without complex feature engineering"
+  ],
+  "weaknesses": [
+    "Versicolor-Virginica discrimination remains challenging",
+    "Conservative approach avoided potentially beneficial feature engineering",
+    "Small test set size limits statistical confidence in exact accuracy estimate"
+  ],
+  "future_suggestions": [
+    "Explore ratio features (petal length/width, sepal length/width) for improved Versicolor-Virginica discrimination",
+    "Investigate polynomial interaction features with regularization to prevent overfitting",
+    "Consider ensemble methods combining multiple algorithms",
+    "Implement error analysis on misclassified samples to identify feature patterns"
+  ],
+  "artifacts": {
+    "model_files": ["trained_model.pkl", "feature_processor.pkl", "data_processor.pkl"],
+    "mlflow_model": "model_artifacts/mlflow_model/",
+    "results_file": "general_artifacts/experiment_results.json"
+  },
+  "success_criteria_met": {
+    "primary_auc": true,
+    "accuracy_threshold": true,
+    "cv_stability": true,
+    "all_class_performance": true
+  }
+}

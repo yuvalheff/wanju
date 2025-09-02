@@ -1,20 +1,33 @@
 data_prep:
-  dataset: "name"
-  version: "version"
-  dataset_name: "dataset_name"
-  placeholder: "placeholder"
+  version: "1.0"
+  dataset_name: "iris_species_classification"
+  target_column: "Species"
+  drop_columns: ["Id"]
+  feature_columns: ["SepalLengthCm", "SepalWidthCm", "PetalLengthCm", "PetalWidthCm"]
   
 feature_prep:
-  placeholder: "placeholder"
+  scaling: true
+  scaler_type: "StandardScaler"
 
 model_evaluation:
-    split_ratio: 0.2
-    placeholder: "placeholder"
+  split_ratio: 0.2
+  cv_folds: 5
+  evaluation_metric: "roc_auc"
+  test_size: 0.2
+  random_state: 42
 
 model:
-    model_type: "model_type"
-    model_params: Dict[str, Any]
-    placeholder: "placeholder"
+  model_type: "LogisticRegression"
+  model_params:
+    random_state: 42
+    max_iter: 1000
+    C: 1.0
+  hyperparameter_grid:
+    C: [0.1, 1.0, 10.0, 100.0]
+  secondary_model_type: "RandomForestClassifier"
+  secondary_model_params:
+    n_estimators: 100
+    random_state: 42
 
 
 
